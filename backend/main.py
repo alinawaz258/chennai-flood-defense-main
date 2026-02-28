@@ -66,7 +66,16 @@ def deploy_units(request: DeployRequest) -> DeployResponse:
 @app.post("/simulate", response_model=SimulationResponse)
 def simulate(request: SimulationRequest) -> SimulationResponse:
     units = request.units or []
-    multiplier, zone_df, blocked_roads, dispatch, route, clearance = service.simulate(
+    (
+        multiplier,
+        zone_df,
+        blocked_roads,
+        dispatch,
+        route,
+        clearance,
+        disaster_severity_index,
+        recommendations,
+    ) = service.simulate(
         rainfall_increase_pct=request.rainfall_increase_pct,
         source=request.source,
         destination=request.destination,
@@ -80,4 +89,6 @@ def simulate(request: SimulationRequest) -> SimulationResponse:
         dispatch=dispatch,
         route=route_resp,
         clearance_top5=clearance,
+        disaster_severity_index=disaster_severity_index,
+        recommendations=recommendations,
     )
