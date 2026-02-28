@@ -18,6 +18,13 @@ class RoutingEngine:
             ("Saidapet", "Velachery", 8.0),
             ("Velachery", "Adyar", 5.5),
             ("Guindy", "Adyar", 5.0),
+            ("Mylapore", "Adyar", 4.2),
+            ("Mylapore", "T_Nagar", 6.0),
+            ("Kodambakkam", "T_Nagar", 3.8),
+            ("Kodambakkam", "Anna_Nagar", 7.5),
+            ("Anna_Nagar", "Perambur", 6.2),
+            ("Perambur", "Tambaram", 18.0),
+            ("Tambaram", "Guindy", 15.0),
         ]
 
     def build_graph(self, zone_risk_df: pd.DataFrame) -> tuple[nx.Graph, List[List[str]]]:

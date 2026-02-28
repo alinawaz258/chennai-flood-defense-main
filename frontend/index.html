@@ -3,162 +3,304 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chennai Urban Flood Defense</title>
+  <title>Chennai Flood Defense Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <style>
-    body { font-family: Arial, sans-serif; background: #f2f7ff; margin: 0; padding: 20px; }
-    h1 { margin-top: 0; }
-    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-    .card { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    button { background: #0052cc; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; cursor: pointer; }
-    button:hover { background: #003f9e; }
-    input, select { width: 100%; padding: 8px; margin: 4px 0 10px; }
+    :root {
+      --bg: #eef4ff;
+      --card: #ffffff;
+      --text: #14213d;
+      --muted: #4a5568;
+      --accent: #1d4ed8;
+      --danger: #b91c1c;
+      --warn: #ea580c;
+      --ok: #15803d;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Inter, Arial, sans-serif; background: linear-gradient(120deg, #edf2ff, #f6fbff); margin: 0; color: var(--text); }
+    .container { max-width: 1280px; margin: 0 auto; padding: 20px; }
+    h1 { margin: 0 0 8px; }
+    .subtitle { color: var(--muted); margin-bottom: 16px; }
+    .toolbar, .card { background: var(--card); border-radius: 14px; box-shadow: 0 6px 18px rgba(20, 33, 61, 0.08); }
+    .toolbar { padding: 16px; display: grid; grid-template-columns: 2fr 1.2fr auto; gap: 12px; margin-bottom: 16px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+    .card { padding: 16px; }
+    h3 { margin: 0 0 12px; }
+    label { font-size: 13px; color: var(--muted); display: block; margin: 4px 0; }
+    input, select { width: 100%; border: 1px solid #dbe2ef; border-radius: 10px; padding: 10px; }
+    button { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
+    button:hover { background: #1e40af; }
+    .zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+    .zone-pill { border-radius: 10px; padding: 10px; color: #fff; font-weight: 700; text-align: center; }
+    .zone-sub { display: block; font-size: 12px; font-weight: 500; opacity: 0.9; margin-top: 6px; }
+    #routeMap, #riskMap { height: 320px; border-radius: 12px; overflow: hidden; }
+    .metrics { display: grid; gap: 10px; grid-template-columns: repeat(3, 1fr); margin: 12px 0; }
+    .metric { padding: 12px; border-radius: 12px; background: #f8fbff; border: 1px solid #e3ecff; }
+    .metric strong { font-size: 20px; display: block; }
+    .recommendations li { margin-bottom: 6px; }
+    .bar-wrap { display: grid; gap: 8px; }
+    .bar-row { display: grid; grid-template-columns: 120px 1fr 60px; align-items: center; gap: 10px; font-size: 13px; }
+    .bar { height: 10px; border-radius: 999px; background: #e5edff; overflow: hidden; }
+    .fill { height: 100%; background: linear-gradient(90deg, #fb923c, #dc2626); }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
-    .heatmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .zone { color: #fff; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; }
-    pre { background: #f7f7f7; border-radius: 6px; padding: 10px; overflow: auto; }
+    th, td { text-align: left; border-bottom: 1px solid #e5e7eb; padding: 8px 6px; }
+    .hint { color: var(--muted); font-size: 13px; }
   </style>
 </head>
 <body>
-  <h1>Chennai Flood Defense Dashboard</h1>
-  <div class="card" style="margin-bottom:16px;">
-    <label>API Base URL</label>
-    <input id="apiBase" placeholder="http://127.0.0.1:8000" />
-    <button onclick="updateApiBase()">Save API Base</button>
+  <div class="container">
+    <h1>Chennai Flood Defense Command Center</h1>
+    <div class="subtitle">Accessible, map-driven flood intelligence for citizens, responders, and city planners.</div>
+
+    <div class="toolbar">
+      <div>
+        <label>API Base URL</label>
+        <input id="apiBase" placeholder="http://127.0.0.1:8000" />
+      </div>
+      <div>
+        <label>User View</label>
+        <select id="userProfile">
+          <option value="citizen">Citizen View</option>
+          <option value="responder">Emergency Responder View</option>
+          <option value="planner">City Planner View</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:end;">
+        <button onclick="updateApiBase()">Save</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Flood Risk Overview</h3>
+        <p class="hint" id="riskHint"></p>
+        <button onclick="loadZones()">Refresh Zone Risk</button>
+        <div id="heatmap" class="zone-grid" style="margin-top:12px;"></div>
+        <div id="riskMap" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card">
+        <h3>Route Planning on Map</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label>Source</label><select id="source"></select></div>
+          <div><label>Destination</label><select id="destination"></select></div>
+        </div>
+        <button style="margin:10px 0;" onclick="getRoute()">Find Safe Route</button>
+        <div id="routeMap"></div>
+        <div class="hint" id="routeSummary" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card">
+        <h3>Emergency Dispatch</h3>
+        <button onclick="runDeployment()">Deploy Units</button>
+        <table>
+          <thead><tr><th>Unit</th><th>Zone</th><th>ETA (min)</th></tr></thead>
+          <tbody id="dispatchBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Simulation (Human-Friendly)</h3>
+        <label>Rainfall Increase: <strong id="rainLabel">20%</strong></label>
+        <input type="range" min="0" max="250" value="20" id="rainSlider" oninput="rainLabel.innerText=this.value+'%'" />
+        <button onclick="simulate()">Run Scenario</button>
+
+        <div class="metrics" id="simMetrics"></div>
+        <h4>Recommendations</h4>
+        <ul id="simRecommendations" class="recommendations"></ul>
+
+        <h4>Zone Risk Intensity</h4>
+        <div id="simRiskBars" class="bar-wrap"></div>
+
+        <h4>Top Clearance Roads</h4>
+        <table>
+          <thead><tr><th>Road</th><th>Water (cm)</th><th>Clearance (hrs)</th><th>Priority</th></tr></thead>
+          <tbody id="clearanceTable"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
-  <div class="grid">
-    <div class="card">
-      <h3>Flood Risk Heatmap (Mock)</h3>
-      <button onclick="loadZones()">Load Zone Risks</button>
-      <div id="heatmap" class="heatmap"></div>
-    </div>
 
-    <div class="card">
-      <h3>Safe Route</h3>
-      <label>Source</label><input id="source" value="T_Nagar" />
-      <label>Destination</label><input id="destination" value="Adyar" />
-      <button onclick="getRoute()">Find Safe Route</button>
-      <pre id="routeOut"></pre>
-    </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const ZONE_COORDS = {
+      T_Nagar: [13.0418, 80.2337], Guindy: [13.0067, 80.2206], Velachery: [12.9752, 80.2209],
+      Saidapet: [13.0230, 80.2237], Adyar: [13.0012, 80.2565], Mylapore: [13.0339, 80.2619],
+      Anna_Nagar: [13.0850, 80.2101], Kodambakkam: [13.0510, 80.2210], Perambur: [13.1216, 80.2328],
+      Tambaram: [12.9249, 80.1000]
+    };
 
-    <div class="card">
-      <h3>Emergency Dispatch</h3>
-      <button onclick="runDeployment()">Deploy Units</button>
-      <table>
-        <thead><tr><th>Unit</th><th>Zone</th><th>ETA (min)</th></tr></thead>
-        <tbody id="dispatchBody"></tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h3>Simulation Mode</h3>
-      <label>Rainfall Increase: <span id="rainLabel">20%</span></label>
-      <input type="range" min="0" max="200" value="20" id="rainSlider" oninput="rainLabel.innerText=this.value+'%'" />
-      <button onclick="simulate()">Run Simulation</button>
-      <pre id="simOut"></pre>
-    </div>
-  </div>
-
-<script>
-const storedApi = localStorage.getItem('flood_api_base');
-const API = storedApi || `${window.location.protocol}//${window.location.hostname}:8000`;
-
-function setApiBase(url) {
-  localStorage.setItem('flood_api_base', url);
-}
-
-function updateApiBase() {
-  const newBase = document.getElementById('apiBase').value.trim();
-  if (!newBase) return;
-  setApiBase(newBase);
-  window.location.reload();
-}
-
-function riskColor(prob) {
-  if (prob >= 0.75) return '#B10026';
-  if (prob >= 0.5) return '#E31A1C';
-  if (prob >= 0.25) return '#FC4E2A';
-  return '#31A354';
-}
-
-async function loadZones() {
-  const res = await fetch(`${API}/zones`);
-  if (!res.ok) {
-    throw new Error('Failed to load zones');
-  }
-  const data = await res.json();
-  const map = document.getElementById('heatmap');
-  map.innerHTML = '';
-  data.zones.forEach(z => {
-    const div = document.createElement('div');
-    div.className = 'zone';
-    div.style.background = riskColor(z.flood_probability);
-    div.textContent = `${z.zone_id} (${z.risk_level})`;
-    map.appendChild(div);
-  });
-}
-
-async function getRoute() {
-  const payload = { source: source.value, destination: destination.value };
-  const res = await fetch(`${API}/route`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    routeOut.textContent = 'Unable to fetch route';
-    return;
-  }
-  routeOut.textContent = JSON.stringify(await res.json(), null, 2);
-}
-
-async function runDeployment() {
-  const payload = {
-    units: [
+    const DEFAULT_UNITS = [
       { unit_id: 'E-1', current_zone: 'T_Nagar', speed_kmph: 40 },
       { unit_id: 'E-2', current_zone: 'Guindy', speed_kmph: 35 },
-      { unit_id: 'E-3', current_zone: 'Adyar', speed_kmph: 30 }
-    ]
-  };
-  const res = await fetch(`${API}/deploy`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    dispatchBody.innerHTML = '<tr><td colspan="3">Dispatch unavailable</td></tr>';
-    return;
-  }
-  const data = await res.json();
-  dispatchBody.innerHTML = '';
-  data.assignments.forEach(a => {
-    const row = `<tr><td>${a.unit_id}</td><td>${a.zone_id}</td><td>${a.eta_minutes}</td></tr>`;
-    dispatchBody.insertAdjacentHTML('beforeend', row);
-  });
-}
+      { unit_id: 'E-3', current_zone: 'Anna_Nagar', speed_kmph: 32 }
+    ];
 
-async function simulate() {
-  const payload = {
-    rainfall_increase_pct: Number(rainSlider.value),
-    source: source.value,
-    destination: destination.value,
-    units: [
-      { unit_id: 'E-1', current_zone: 'T_Nagar', speed_kmph: 40 },
-      { unit_id: 'E-2', current_zone: 'Guindy', speed_kmph: 35 }
-    ]
-  };
-  const res = await fetch(`${API}/simulate`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    simOut.textContent = 'Simulation failed';
-    return;
-  }
-  simOut.textContent = JSON.stringify(await res.json(), null, 2);
-}
+    const storedApi = localStorage.getItem('flood_api_base');
+    const API = storedApi || `${window.location.protocol}//${window.location.hostname}:8000`;
 
-document.getElementById('apiBase').value = API;
+    const riskMap = L.map('riskMap').setView([13.04, 80.23], 11);
+    const routeMap = L.map('routeMap').setView([13.04, 80.23], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(riskMap);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(routeMap);
+    const riskLayer = L.layerGroup().addTo(riskMap);
+    const routeLayer = L.layerGroup().addTo(routeMap);
 
-loadZones().catch(() => {
-  const map = document.getElementById('heatmap');
-  map.innerHTML = `<div class="zone" style="background:#666;grid-column:span 3;">API not reachable at ${API}</div>`;
-});
-</script>
+    function setApiBase(url) { localStorage.setItem('flood_api_base', url); }
+    function updateApiBase() {
+      const base = document.getElementById('apiBase').value.trim();
+      if (!base) return;
+      setApiBase(base);
+      window.location.reload();
+    }
+
+    function riskColor(prob) {
+      if (prob >= 0.75) return '#b10026';
+      if (prob >= 0.5) return '#dc2626';
+      if (prob >= 0.25) return '#ea580c';
+      return '#15803d';
+    }
+
+    function profileHint(profile) {
+      if (profile === 'responder') return 'Responder mode: focus on blocked roads, dispatch ETA, and critical corridors.';
+      if (profile === 'planner') return 'Planner mode: compare zone trends, severity index, and clearance priorities.';
+      return 'Citizen mode: simple risk labels and route safety guidance for safer travel decisions.';
+    }
+
+    function toOptions(zones) {
+      source.innerHTML = '';
+      destination.innerHTML = '';
+      zones.forEach(z => {
+        source.insertAdjacentHTML('beforeend', `<option value="${z.zone_id}">${z.zone_id}</option>`);
+        destination.insertAdjacentHTML('beforeend', `<option value="${z.zone_id}">${z.zone_id}</option>`);
+      });
+      source.value = 'T_Nagar';
+      destination.value = 'Adyar';
+    }
+
+    async function loadZones() {
+      const profile = userProfile.value;
+      riskHint.textContent = profileHint(profile);
+      const res = await fetch(`${API}/zones`);
+      if (!res.ok) throw new Error('zones unavailable');
+      const data = await res.json();
+      const zones = data.zones;
+      toOptions(zones);
+
+      heatmap.innerHTML = '';
+      riskLayer.clearLayers();
+
+      zones.forEach(z => {
+        heatmap.insertAdjacentHTML('beforeend', `
+          <div class="zone-pill" style="background:${riskColor(z.flood_probability)};">
+            ${z.zone_id}
+            <span class="zone-sub">${z.risk_level} • ${Math.round(z.flood_probability * 100)}%</span>
+          </div>`);
+
+        if (ZONE_COORDS[z.zone_id]) {
+          const circle = L.circleMarker(ZONE_COORDS[z.zone_id], {
+            radius: 8 + (z.flood_probability * 8),
+            color: '#fff',
+            weight: 1,
+            fillColor: riskColor(z.flood_probability),
+            fillOpacity: 0.86
+          });
+          circle.bindPopup(`<strong>${z.zone_id}</strong><br>Risk: ${z.risk_level}<br>Water depth: ${z.estimated_water_depth.toFixed(1)} cm`);
+          circle.addTo(riskLayer);
+        }
+      });
+    }
+
+    async function getRoute() {
+      const payload = { source: source.value, destination: destination.value };
+      const res = await fetch(`${API}/route`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        routeSummary.textContent = 'Route service unavailable.';
+        return;
+      }
+
+      const data = await res.json();
+      routeLayer.clearLayers();
+
+      if (data.route.length > 1) {
+        const coords = data.route.map(zone => ZONE_COORDS[zone]).filter(Boolean);
+        L.polyline(coords, { color: '#2563eb', weight: 6 }).addTo(routeLayer);
+        coords.forEach((c, idx) => L.marker(c).bindTooltip(data.route[idx], { permanent: false }).addTo(routeLayer));
+      }
+
+      data.blocked_edges.forEach(edge => {
+        const a = ZONE_COORDS[edge[0]];
+        const b = ZONE_COORDS[edge[1]];
+        if (a && b) L.polyline([a, b], { color: '#b91c1c', weight: 4, dashArray: '6 6' }).addTo(routeLayer);
+      });
+
+      routeSummary.textContent = data.route.length
+        ? `Path: ${data.route.join(' → ')} | Algorithm: ${data.algorithm.toUpperCase()} | Cost: ${data.total_cost} | Blocked Roads: ${data.blocked_edges.length}`
+        : 'No safe route currently available between selected zones.';
+    }
+
+    async function runDeployment() {
+      const res = await fetch(`${API}/deploy`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ units: DEFAULT_UNITS })
+      });
+      if (!res.ok) {
+        dispatchBody.innerHTML = '<tr><td colspan="3">Dispatch unavailable</td></tr>';
+        return;
+      }
+      const data = await res.json();
+      dispatchBody.innerHTML = data.assignments.length
+        ? data.assignments.map(a => `<tr><td>${a.unit_id}</td><td>${a.zone_id}</td><td>${a.eta_minutes}</td></tr>`).join('')
+        : '<tr><td colspan="3">No high-risk dispatch needed currently.</td></tr>';
+    }
+
+    async function simulate() {
+      const payload = {
+        rainfall_increase_pct: Number(rainSlider.value),
+        source: source.value,
+        destination: destination.value,
+        units: DEFAULT_UNITS
+      };
+
+      const res = await fetch(`${API}/simulate`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        simMetrics.innerHTML = '<div class="metric"><strong>Simulation Failed</strong></div>';
+        return;
+      }
+
+      const data = await res.json();
+      simMetrics.innerHTML = `
+        <div class="metric"><span>Rainfall Multiplier</span><strong>${data.rainfall_multiplier.toFixed(2)}x</strong></div>
+        <div class="metric"><span>Blocked Roads</span><strong>${data.blocked_roads.length}</strong></div>
+        <div class="metric"><span>Severity Index</span><strong>${data.disaster_severity_index.toFixed(0)}</strong></div>`;
+
+      simRecommendations.innerHTML = data.recommendations.map(item => `<li>${item}</li>`).join('');
+
+      const maxProb = Math.max(...data.zones.map(z => z.flood_probability), 0.01);
+      simRiskBars.innerHTML = data.zones
+        .sort((a, b) => b.flood_probability - a.flood_probability)
+        .map(z => `
+          <div class="bar-row">
+            <span>${z.zone_id}</span>
+            <div class="bar"><div class="fill" style="width:${(z.flood_probability / maxProb) * 100}%"></div></div>
+            <span>${Math.round(z.flood_probability * 100)}%</span>
+          </div>`).join('');
+
+      clearanceTable.innerHTML = data.clearance_top5.length
+        ? data.clearance_top5.map(c => `<tr><td>${c.zone_id}</td><td>${c.water_depth_cm}</td><td>${c.clearance_time_hours}</td><td>${c.priority_score}</td></tr>`).join('')
+        : '<tr><td colspan="4">No blocked roads to clear in this scenario.</td></tr>';
+
+      await getRoute();
+    }
+
+    document.getElementById('apiBase').value = API;
+    userProfile.addEventListener('change', loadZones);
+    loadZones().catch(() => {
+      heatmap.innerHTML = `<div class="zone-pill" style="background:#475569;grid-column:span 3;">API unreachable at ${API}</div>`;
+    });
+  </script>
 </body>
 </html>
