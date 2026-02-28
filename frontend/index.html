@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chennai Urban Flood Defense</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f7ff; margin: 0; padding: 20px; }
+    h1 { margin-top: 0; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    button { background: #0052cc; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; cursor: pointer; }
+    button:hover { background: #003f9e; }
+    input, select { width: 100%; padding: 8px; margin: 4px 0 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+    .heatmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .zone { color: #fff; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; }
+    pre { background: #f7f7f7; border-radius: 6px; padding: 10px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Chennai Flood Defense Dashboard</h1>
+  <div class="card" style="margin-bottom:16px;">
+    <label>API Base URL</label>
+    <input id="apiBase" placeholder="http://127.0.0.1:8000" />
+    <button onclick="updateApiBase()">Save API Base</button>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h3>Flood Risk Heatmap (Mock)</h3>
+      <button onclick="loadZones()">Load Zone Risks</button>
+      <div id="heatmap" class="heatmap"></div>
+    </div>
+
+    <div class="card">
+      <h3>Safe Route</h3>
+      <label>Source</label><input id="source" value="T_Nagar" />
+      <label>Destination</label><input id="destination" value="Adyar" />
+      <button onclick="getRoute()">Find Safe Route</button>
+      <pre id="routeOut"></pre>
+    </div>
+
+    <div class="card">
+      <h3>Emergency Dispatch</h3>
+      <button onclick="runDeployment()">Deploy Units</button>
+      <table>
+        <thead><tr><th>Unit</th><th>Zone</th><th>ETA (min)</th></tr></thead>
+        <tbody id="dispatchBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Simulation Mode</h3>
+      <label>Rainfall Increase: <span id="rainLabel">20%</span></label>
+      <input type="range" min="0" max="200" value="20" id="rainSlider" oninput="rainLabel.innerText=this.value+'%'" />
+      <button onclick="simulate()">Run Simulation</button>
+      <pre id="simOut"></pre>
+    </div>
+  </div>
+
+<script>
+const storedApi = localStorage.getItem('flood_api_base');
+const API = storedApi || `${window.location.protocol}//${window.location.hostname}:8000`;
+
+function setApiBase(url) {
+  localStorage.setItem('flood_api_base', url);
+}
+
+function updateApiBase() {
+  const newBase = document.getElementById('apiBase').value.trim();
+  if (!newBase) return;
+  setApiBase(newBase);
+  window.location.reload();
+}
+
+function riskColor(prob) {
+  if (prob >= 0.75) return '#B10026';
+  if (prob >= 0.5) return '#E31A1C';
+  if (prob >= 0.25) return '#FC4E2A';
+  return '#31A354';
+}
+
+async function loadZones() {
+  const res = await fetch(`${API}/zones`);
+  if (!res.ok) {
+    throw new Error('Failed to load zones');
+  }
+  const data = await res.json();
+  const map = document.getElementById('heatmap');
+  map.innerHTML = '';
+  data.zones.forEach(z => {
+    const div = document.createElement('div');
+    div.className = 'zone';
+    div.style.background = riskColor(z.flood_probability);
+    div.textContent = `${z.zone_id} (${z.risk_level})`;
+    map.appendChild(div);
+  });
+}
+
+async function getRoute() {
+  const payload = { source: source.value, destination: destination.value };
+  const res = await fetch(`${API}/route`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    routeOut.textContent = 'Unable to fetch route';
+    return;
+  }
+  routeOut.textContent = JSON.stringify(await res.json(), null, 2);
+}
+
+async function runDeployment() {
+  const payload = {
+    units: [
+      { unit_id: 'E-1', current_zone: 'T_Nagar', speed_kmph: 40 },
+      { unit_id: 'E-2', current_zone: 'Guindy', speed_kmph: 35 },
+      { unit_id: 'E-3', current_zone: 'Adyar', speed_kmph: 30 }
+    ]
+  };
+  const res = await fetch(`${API}/deploy`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    dispatchBody.innerHTML = '<tr><td colspan="3">Dispatch unavailable</td></tr>';
+    return;
+  }
+  const data = await res.json();
+  dispatchBody.innerHTML = '';
+  data.assignments.forEach(a => {
+    const row = `<tr><td>${a.unit_id}</td><td>${a.zone_id}</td><td>${a.eta_minutes}</td></tr>`;
+    dispatchBody.insertAdjacentHTML('beforeend', row);
+  });
+}
+
+async function simulate() {
+  const payload = {
+    rainfall_increase_pct: Number(rainSlider.value),
+    source: source.value,
+    destination: destination.value,
+    units: [
+      { unit_id: 'E-1', current_zone: 'T_Nagar', speed_kmph: 40 },
+      { unit_id: 'E-2', current_zone: 'Guindy', speed_kmph: 35 }
+    ]
+  };
+  const res = await fetch(`${API}/simulate`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    simOut.textContent = 'Simulation failed';
+    return;
+  }
+  simOut.textContent = JSON.stringify(await res.json(), null, 2);
+}
+
+document.getElementById('apiBase').value = API;
+
+loadZones().catch(() => {
+  const map = document.getElementById('heatmap');
+  map.innerHTML = `<div class="zone" style="background:#666;grid-column:span 3;">API not reachable at ${API}</div>`;
+});
+</script>
+</body>
+</html>

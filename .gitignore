@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+env/
+
+# Environment variables
+.env
+
+# GCP credentials
+backend/chennai-flood-defense-sa.json
+*.json
+
+# Visual Studio
+.vs/
+.vscode/
+
+# Logs
+*.log
