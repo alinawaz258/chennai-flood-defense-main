@@ -1,15 +1,36 @@
 from __future__ import annotations
 
+from typing import Dict
+
 import numpy as np
 import pandas as pd
 
 
-def compute_zone_risk(zones_df: pd.DataFrame, forecast_df: pd.DataFrame, rainfall_multiplier: float = 1.0) -> pd.DataFrame:
-    avg_rainfall = float(forecast_df["predicted_rainfall"].mean()) * rainfall_multiplier
+ZONE_RAINFALL_SENSITIVITY: Dict[str, float] = {
+    "Adyar": 1.2,
+    "Velachery": 1.15,
+    "Saidapet": 1.05,
+    "T_Nagar": 0.9,
+    "Guindy": 0.85,
+}
 
-    df = zones_df.copy()
-    df["predicted_rainfall"] = avg_rainfall
+
+def compute_zone_risk(
+    zones_df: pd.DataFrame,
+    forecast_df: pd.DataFrame,
+    rainfall_multiplier: float = 1.0,
+) -> pd.DataFrame:
+    """Compute zone-wise flood risk using forecast rainfall and infrastructure features."""
+    avg_rainfall: float = float(forecast_df["predicted_rainfall"].mean()) * rainfall_multiplier
+
+    df: pd.DataFrame = zones_df.copy()
+    # Zone-specific rainfall sensitivity makes low-lying regions react more aggressively.
+    df["rainfall_sensitivity_multiplier"] = (
+        df["zone_id"].map(ZONE_RAINFALL_SENSITIVITY).fillna(1.0).astype(float)
+    )
+    df["predicted_rainfall"] = avg_rainfall * df["rainfall_sensitivity_multiplier"]
     df["drainage_capacity_inverse"] = 1.0 / df["drainage_capacity"].clip(lower=1)
+
     raw_score = (
         (df["predicted_rainfall"] * 0.5)
         + ((1.0 / df["elevation"].clip(lower=0.5)) * 0.2)
@@ -30,6 +51,7 @@ def compute_zone_risk(zones_df: pd.DataFrame, forecast_df: pd.DataFrame, rainfal
 
     water_depth_mm = (df["predicted_rainfall"] - df["drainage_capacity"]).clip(lower=0.0)
     df["estimated_water_depth"] = water_depth_mm / 10.0
+
     return df[
         [
             "zone_id",

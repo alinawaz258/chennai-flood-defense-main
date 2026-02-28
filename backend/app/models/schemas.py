@@ -78,6 +78,8 @@ class SimulationResponse(BaseModel):
     dispatch: List[DeploymentAssignment]
     route: Optional[RouteResponse] = None
     clearance_top5: List[ClearanceResult]
+    disaster_severity_index: float
+    recommendations: List[str]
 
 
 class HealthResponse(BaseModel):
