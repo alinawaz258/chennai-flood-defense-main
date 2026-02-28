@@ -32,11 +32,11 @@ chennai-flood-defense/
    ```
 2. Configure environment variables.
    ```bash
-   set PROJECT_ID="<gcp-project-id>"
-   set DATASET_ID="chennai_flood"
-   set RAINFALL_TABLE="rainfall_history"
-   set ZONES_TABLE="zones"
-   set GCP_CREDENTIALS_PATH="/path/to/service-account.json"
+   export PROJECT_ID="chennai-flood-defense-sa"
+   export DATASET_ID="chennai_flood"
+   export RAINFALL_TABLE="rainfall_history"
+   export ZONES_TABLE="zones"
+   export GCP_CREDENTIALS_PATH="/workspaces/chennai-flood-defense-main/backend/chennai-flood-defense-sa.json"
    ```
 3. Run backend.
    ```bash
