@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.app.core.config import get_settings
 from backend.app.models.schemas import (
     DeployRequest,
     DeployResponse,
@@ -18,6 +19,7 @@ from backend.app.services.system_service import FloodDefenseService
 
 app = FastAPI(title="Chennai Urban Flood Defense API", version="1.0.0")
 service = FloodDefenseService()
+settings = get_settings()
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +32,8 @@ app.add_middleware(
 
 @app.get("/", response_model=HealthResponse)
 def healthcheck() -> HealthResponse:
-    return HealthResponse(status="ok", service="chennai-flood-defense")
+    profile = f"{settings.compute_cpu_vendor} {settings.compute_cpu_family}"
+    return HealthResponse(status="ok", service="chennai-flood-defense", compute_profile=profile)
 
 
 @app.get("/forecast", response_model=ForecastResponse)

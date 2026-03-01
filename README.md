@@ -37,6 +37,9 @@ chennai-flood-defense/
    set RAINFALL_TABLE="rainfall_history"
    set ZONES_TABLE="zones"
    set GCP_CREDENTIALS_PATH="/path/to/service-account.json"
+   set COMPUTE_CPU_VENDOR="AMD"
+   set COMPUTE_CPU_FAMILY="EPYC"
+   set COMPUTE_OPTIMIZED="true"
    ```
 3. Run backend.
    ```bash
@@ -72,6 +75,7 @@ python -m unittest backend.tests.test_services
 ## API Endpoints
 
 - `GET /forecast`
+- `GET /` (health with compute profile, defaults to `AMD EPYC`)
 - `GET /forecast/sql`
 - `GET /zones`
 - `POST /route`
