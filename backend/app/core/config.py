@@ -11,10 +11,14 @@ class Settings:
     zones_table: str = "zones"
     gcp_credentials_path: str = ""
     maps_api_key: str = ""
+    compute_cpu_vendor: str = "AMD"
+    compute_cpu_family: str = "EPYC"
+    compute_optimized: bool = True
 
 
 @lru_cache
 def get_settings() -> Settings:
+    optimized_flag = os.getenv("COMPUTE_OPTIMIZED", "true").strip().lower()
     return Settings(
         project_id=os.getenv("PROJECT_ID", ""),
         dataset_id=os.getenv("DATASET_ID", "chennai_flood"),
@@ -22,4 +26,7 @@ def get_settings() -> Settings:
         zones_table=os.getenv("ZONES_TABLE", "zones"),
         gcp_credentials_path=os.getenv("GCP_CREDENTIALS_PATH", ""),
         maps_api_key=os.getenv("MAPS_API_KEY", ""),
+        compute_cpu_vendor=os.getenv("COMPUTE_CPU_VENDOR", "AMD"),
+        compute_cpu_family=os.getenv("COMPUTE_CPU_FAMILY", "EPYC"),
+        compute_optimized=optimized_flag in {"1", "true", "yes", "on"},
     )

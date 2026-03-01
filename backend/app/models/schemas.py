@@ -85,6 +85,7 @@ class SimulationResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     service: str
+    compute_profile: str
 
 
 class ZonesResponse(BaseModel):
