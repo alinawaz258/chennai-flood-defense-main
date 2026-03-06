@@ -32,11 +32,11 @@ chennai-flood-defense/
    ```
 2. Configure environment variables.
    ```bash
-   set PROJECT_ID="<gcp-project-id>"
+   set PROJECT_ID="chennai-flood-defense-sa"
    set DATASET_ID="chennai_flood"
    set RAINFALL_TABLE="rainfall_history"
    set ZONES_TABLE="zones"
-   set GCP_CREDENTIALS_PATH="/path/to/service-account.json"
+   set GCP_CREDENTIALS_PATH="/workspaces/chennai-flood-defense-main/backend/chennai-flood-defense-sa.json"
    set COMPUTE_CPU_VENDOR="AMD"
    set COMPUTE_CPU_FAMILY="EPYC"
    set COMPUTE_OPTIMIZED="true"
