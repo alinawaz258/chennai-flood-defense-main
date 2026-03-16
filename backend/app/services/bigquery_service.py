@@ -101,6 +101,19 @@ class BigQueryRepository:
 
         return self.client.query(query).result().to_dataframe()
 
+    def insert_sensor_rows(self, rows: List[dict]) -> int:
+        """Insert sensor telemetry rows into BigQuery; fallback returns 0 when unavailable."""
+        if not rows:
+            return 0
+        if self.client is None:
+            return 0
+
+        table_id = f"{self.settings.project_id}.{self.settings.dataset_id}.sensor_updates"
+        errors = self.client.insert_rows_json(table_id, rows)
+        if errors:
+            return 0
+        return len(rows)
+
     @staticmethod
     def _mock_forecast() -> pd.DataFrame:
         periods = pd.date_range(pd.Timestamp.utcnow().normalize(), periods=7, freq="D")
