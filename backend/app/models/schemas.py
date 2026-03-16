@@ -103,3 +103,84 @@ class ErrorResponse(BaseModel):
 
 class HeatmapResponse(BaseModel):
     heatmap: Dict[str, float]
+
+
+class CitizenReportRequest(BaseModel):
+    location: str
+    water_depth: float = Field(ge=0)
+    photo_url: Optional[str] = None
+    road_blocked: bool = False
+
+
+class CitizenReportResponse(BaseModel):
+    status: str
+    report: Dict[str, object]
+
+
+class TrafficRerouteRequest(BaseModel):
+    source: str
+    destination: str
+    algorithm: str = Field(default="astar", pattern="^(astar|dijkstra)$")
+
+
+class TrafficRerouteResponse(BaseModel):
+    algorithm: str
+    route: List[str]
+    total_cost: float
+    blocked_edges: List[List[str]]
+
+
+class ShelterInput(BaseModel):
+    shelter_id: str
+    zone_id: str
+    capacity: int = Field(ge=0)
+
+
+class EvacuationPlanRequest(BaseModel):
+    shelters: List[ShelterInput]
+
+
+class EvacuationPlanItem(BaseModel):
+    zone_id: str
+    shelter_id: Optional[str]
+    evacuation_route: List[str]
+    estimated_evacuation_time_minutes: float
+
+
+class EvacuationPlanResponse(BaseModel):
+    plans: List[EvacuationPlanItem]
+
+
+class DamageEstimateRequest(BaseModel):
+    flood_depth: float = Field(ge=0)
+    population: int = Field(ge=0)
+    infrastructure_density: float = Field(ge=0)
+
+
+class DamageEstimateResponse(BaseModel):
+    estimated_economic_loss_inr: float
+    people_affected: int
+    critical_infrastructure_impact: float
+
+
+class RecommendationsRequest(BaseModel):
+    current_flood_risk_map: List[Dict[str, object]]
+    available_rescue_units: List[Dict[str, object]]
+    road_accessibility: List[Dict[str, object]]
+
+
+class RecommendationsResponse(BaseModel):
+    recommendations: List[str]
+
+
+class SendAlertRequest(BaseModel):
+    message: str
+    channels: List[str]
+    recipients: List[str]
+
+
+class SendAlertResponse(BaseModel):
+    message: str
+    channels: List[str]
+    total_recipients: int
+    events: List[Dict[str, object]]
