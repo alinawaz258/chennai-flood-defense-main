@@ -18,7 +18,7 @@
     }
     * { box-sizing: border-box; }
     body { font-family: Inter, Arial, sans-serif; background: linear-gradient(120deg, #edf2ff, #f6fbff); margin: 0; color: var(--text); }
-    .container { max-width: 1280px; margin: 0 auto; padding: 20px; }
+    .container { max-width: 1320px; margin: 0 auto; padding: 20px; }
     h1 { margin: 0 0 8px; }
     .subtitle { color: var(--muted); margin-bottom: 16px; }
     .toolbar, .card { background: var(--card); border-radius: 14px; box-shadow: 0 6px 18px rgba(20, 33, 61, 0.08); }
@@ -26,8 +26,10 @@
     .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
     .card { padding: 16px; }
     h3 { margin: 0 0 12px; }
+    h4 { margin: 10px 0 8px; }
     label { font-size: 13px; color: var(--muted); display: block; margin: 4px 0; }
-    input, select { width: 100%; border: 1px solid #dbe2ef; border-radius: 10px; padding: 10px; }
+    input, select, textarea { width: 100%; border: 1px solid #dbe2ef; border-radius: 10px; padding: 10px; }
+    textarea { resize: vertical; min-height: 84px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
     button { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
     button:hover { background: #1e40af; }
     .zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
@@ -45,6 +47,13 @@
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { text-align: left; border-bottom: 1px solid #e5e7eb; padding: 8px 6px; }
     .hint { color: var(--muted); font-size: 13px; }
+    .ops-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .ops-box { border: 1px solid #e6edfb; border-radius: 12px; padding: 10px; background: #fbfdff; }
+    .inline-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; background: #f7faff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; max-height: 220px; overflow: auto; }
+    @media (max-width: 900px) {
+      .ops-grid, .metrics { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -118,6 +127,96 @@
           <tbody id="clearanceTable"></tbody>
         </table>
       </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h3>Advanced Operations Console (New Modules)</h3>
+        <p class="hint">Directly invoke the newly added IoT, traffic, planning, decision, alert, and digital-twin APIs.</p>
+
+        <div class="ops-grid">
+          <div class="ops-box">
+            <h4>IoT Sensor Update</h4>
+            <div class="inline-2">
+              <div><label>Zone</label><select id="sensorZone"></select></div>
+              <div><label>Type</label><select id="sensorType"><option>water_level</option><option>rain_gauge</option><option>river_level</option><option>soil_moisture</option></select></div>
+            </div>
+            <div class="inline-2">
+              <div><label>Value</label><input id="sensorValue" type="number" value="24" /></div>
+              <div><label>Unit</label><input id="sensorUnit" value="cm" /></div>
+            </div>
+            <button onclick="sendSensorUpdate()">POST /sensor-update</button>
+          </div>
+
+          <div class="ops-box">
+            <h4>Citizen Flood Report</h4>
+            <div class="inline-2">
+              <div><label>Location</label><select id="reportZone"></select></div>
+              <div><label>Water Depth (cm)</label><input id="reportDepth" type="number" value="35" /></div>
+            </div>
+            <div class="inline-2">
+              <div><label>Photo URL</label><input id="reportPhoto" value="https://example.org/flood-photo.jpg" /></div>
+              <div><label>Road Blocked</label><select id="reportBlocked"><option value="true">true</option><option value="false">false</option></select></div>
+            </div>
+            <button onclick="sendReport()">POST /report</button>
+          </div>
+
+          <div class="ops-box">
+            <h4>Traffic Reroute</h4>
+            <div class="inline-2">
+              <div><label>Source</label><select id="rerouteSource"></select></div>
+              <div><label>Destination</label><select id="rerouteDestination"></select></div>
+            </div>
+            <div><label>Algorithm</label><select id="rerouteAlgo"><option>astar</option><option>dijkstra</option></select></div>
+            <button onclick="runTrafficReroute()">POST /traffic-reroute</button>
+          </div>
+
+          <div class="ops-box">
+            <h4>Evacuation Plan</h4>
+            <label>Shelter payload (JSON)</label>
+            <textarea id="shelterPayload">[
+  {"shelter_id": "S-1", "zone_id": "Anna_Nagar", "capacity": 2800},
+  {"shelter_id": "S-2", "zone_id": "Guindy", "capacity": 2500},
+  {"shelter_id": "S-3", "zone_id": "Tambaram", "capacity": 3200}
+]</textarea>
+            <button onclick="runEvacuationPlan()">POST /evacuation-plan</button>
+          </div>
+
+          <div class="ops-box">
+            <h4>Damage Estimation</h4>
+            <div class="inline-2">
+              <div><label>Flood Depth (cm)</label><input id="damageDepth" type="number" value="50" /></div>
+              <div><label>Population</label><input id="damagePopulation" type="number" value="12000" /></div>
+            </div>
+            <div><label>Infrastructure Density</label><input id="damageInfra" type="number" value="8.2" step="0.1" /></div>
+            <button onclick="runDamageEstimate()">POST /damage-estimate</button>
+          </div>
+
+          <div class="ops-box">
+            <h4>Decision Recommendations</h4>
+            <p class="hint">Build recommendation input from current zones and default road accessibility.</p>
+            <button onclick="runRecommendations()">POST /recommendations</button>
+          </div>
+
+          <div class="ops-box">
+            <h4>Public Alert</h4>
+            <label>Message</label>
+            <input id="alertMessage" value="Heavy rainfall predicted in Zone 5. Flooding possible within 2 hours. Avoid roads R12 and R14." />
+            <div class="inline-2">
+              <div><label>Channels</label><input id="alertChannels" value="sms,whatsapp,push" /></div>
+              <div><label>Recipients</label><input id="alertRecipients" value="+919000000001,+919000000002" /></div>
+            </div>
+            <button onclick="runSendAlert()">POST /send-alert</button>
+          </div>
+
+          <div class="ops-box">
+            <h4>Digital Twin Export</h4>
+            <p class="hint">Fetch GeoJSON output with zones, blocked roads, and deployment markers.</p>
+            <button onclick="runDigitalTwinExport()">GET /digital-twin/export</button>
+          </div>
+        </div>
+
+        <h4 style="margin-top:12px;">Module Output</h4>
+        <pre id="opsOutput">Run any new module action to see response payload.</pre>
+      </div>
     </div>
   </div>
 
@@ -168,22 +267,40 @@
     }
 
     function toOptions(zones) {
-      source.innerHTML = '';
-      destination.innerHTML = '';
+      const ids = ['source', 'destination', 'sensorZone', 'reportZone', 'rerouteSource', 'rerouteDestination'];
+      ids.forEach(id => { document.getElementById(id).innerHTML = ''; });
       zones.forEach(z => {
-        source.insertAdjacentHTML('beforeend', `<option value="${z.zone_id}">${z.zone_id}</option>`);
-        destination.insertAdjacentHTML('beforeend', `<option value="${z.zone_id}">${z.zone_id}</option>`);
+        ids.forEach(id => document.getElementById(id).insertAdjacentHTML('beforeend', `<option value="${z.zone_id}">${z.zone_id}</option>`));
       });
       source.value = 'T_Nagar';
       destination.value = 'Adyar';
+      sensorZone.value = 'Adyar';
+      reportZone.value = 'Adyar';
+      rerouteSource.value = 'T_Nagar';
+      rerouteDestination.value = 'Guindy';
+    }
+
+    function renderOpsOutput(title, payload) {
+      const ts = new Date().toLocaleTimeString();
+      opsOutput.textContent = `[${ts}] ${title}\n${JSON.stringify(payload, null, 2)}`;
+    }
+
+    async function apiCall(path, method = 'GET', body = null) {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body !== null) opts.body = JSON.stringify(body);
+      const res = await fetch(`${API}${path}`, opts);
+      if (!res.ok) {
+        let details = '';
+        try { details = JSON.stringify(await res.json()); } catch (_) { details = await res.text(); }
+        throw new Error(`${path} failed (${res.status}): ${details}`);
+      }
+      return res.json();
     }
 
     async function loadZones() {
       const profile = userProfile.value;
       riskHint.textContent = profileHint(profile);
-      const res = await fetch(`${API}/zones`);
-      if (!res.ok) throw new Error('zones unavailable');
-      const data = await res.json();
+      const data = await apiCall('/zones');
       const zones = data.zones;
       toOptions(zones);
 
@@ -213,15 +330,7 @@
 
     async function getRoute() {
       const payload = { source: source.value, destination: destination.value };
-      const res = await fetch(`${API}/route`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        routeSummary.textContent = 'Route service unavailable.';
-        return;
-      }
-
-      const data = await res.json();
+      const data = await apiCall('/route', 'POST', payload);
       routeLayer.clearLayers();
 
       if (data.route.length > 1) {
@@ -242,14 +351,7 @@
     }
 
     async function runDeployment() {
-      const res = await fetch(`${API}/deploy`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ units: DEFAULT_UNITS })
-      });
-      if (!res.ok) {
-        dispatchBody.innerHTML = '<tr><td colspan="3">Dispatch unavailable</td></tr>';
-        return;
-      }
-      const data = await res.json();
+      const data = await apiCall('/deploy', 'POST', { units: DEFAULT_UNITS });
       dispatchBody.innerHTML = data.assignments.length
         ? data.assignments.map(a => `<tr><td>${a.unit_id}</td><td>${a.zone_id}</td><td>${a.eta_minutes}</td></tr>`).join('')
         : '<tr><td colspan="3">No high-risk dispatch needed currently.</td></tr>';
@@ -263,15 +365,7 @@
         units: DEFAULT_UNITS
       };
 
-      const res = await fetch(`${API}/simulate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        simMetrics.innerHTML = '<div class="metric"><strong>Simulation Failed</strong></div>';
-        return;
-      }
-
-      const data = await res.json();
+      const data = await apiCall('/simulate', 'POST', payload);
       simMetrics.innerHTML = `
         <div class="metric"><span>Rainfall Multiplier</span><strong>${data.rainfall_multiplier.toFixed(2)}x</strong></div>
         <div class="metric"><span>Blocked Roads</span><strong>${data.blocked_roads.length}</strong></div>
@@ -296,10 +390,93 @@
       await getRoute();
     }
 
-    document.getElementById('apiBase').value = API;
-    userProfile.addEventListener('change', loadZones);
-    loadZones().catch(() => {
-      heatmap.innerHTML = `<div class="zone-pill" style="background:#475569;grid-column:span 3;">API unreachable at ${API}</div>`;
+    async function sendSensorUpdate() {
+      const payload = [{
+        sensor_id: `sensor-${Date.now()}`,
+        sensor_type: sensorType.value,
+        zone_id: sensorZone.value,
+        value: Number(sensorValue.value),
+        unit: sensorUnit.value,
+        timestamp: new Date().toISOString()
+      }];
+      const data = await apiCall('/sensor-update', 'POST', payload);
+      renderOpsOutput('/sensor-update', data);
+      await loadZones();
+    }
+
+    async function sendReport() {
+      const payload = {
+        location: reportZone.value,
+        water_depth: Number(reportDepth.value),
+        photo_url: reportPhoto.value,
+        road_blocked: reportBlocked.value === 'true'
+      };
+      const data = await apiCall('/report', 'POST', payload);
+      renderOpsOutput('/report', data);
+    }
+
+    async function runTrafficReroute() {
+      const payload = { source: rerouteSource.value, destination: rerouteDestination.value, algorithm: rerouteAlgo.value };
+      const data = await apiCall('/traffic-reroute', 'POST', payload);
+      renderOpsOutput('/traffic-reroute', data);
+    }
+
+    async function runEvacuationPlan() {
+      const shelters = JSON.parse(shelterPayload.value);
+      const data = await apiCall('/evacuation-plan', 'POST', { shelters });
+      renderOpsOutput('/evacuation-plan', data);
+    }
+
+    async function runDamageEstimate() {
+      const payload = {
+        flood_depth: Number(damageDepth.value),
+        population: Number(damagePopulation.value),
+        infrastructure_density: Number(damageInfra.value)
+      };
+      const data = await apiCall('/damage-estimate', 'POST', payload);
+      renderOpsOutput('/damage-estimate', data);
+    }
+
+    async function runRecommendations() {
+      const zones = (await apiCall('/zones')).zones;
+      const roads = [
+        { road_id: 'R12', accessible: false },
+        { road_id: 'R14', accessible: false },
+        { road_id: 'R21', accessible: true }
+      ];
+      const payload = {
+        current_flood_risk_map: zones,
+        available_rescue_units: DEFAULT_UNITS,
+        road_accessibility: roads
+      };
+      const data = await apiCall('/recommendations', 'POST', payload);
+      renderOpsOutput('/recommendations', data);
+    }
+
+    async function runSendAlert() {
+      const payload = {
+        message: alertMessage.value,
+        channels: alertChannels.value.split(',').map(s => s.trim()).filter(Boolean),
+        recipients: alertRecipients.value.split(',').map(s => s.trim()).filter(Boolean)
+      };
+      const data = await apiCall('/send-alert', 'POST', payload);
+      renderOpsOutput('/send-alert', data);
+    }
+
+    async function runDigitalTwinExport() {
+      const data = await apiCall('/digital-twin/export');
+      renderOpsOutput('/digital-twin/export', { type: data.type, feature_count: data.features.length, sample: data.features.slice(0, 2) });
+    }
+
+    async function boot() {
+      document.getElementById('apiBase').value = API;
+      userProfile.addEventListener('change', loadZones);
+      await loadZones();
+    }
+
+    boot().catch((error) => {
+      heatmap.innerHTML = `<div class="zone-pill" style="background:#475569;grid-column:span 3;">${error.message}</div>`;
+      renderOpsOutput('Boot error', { error: error.message });
     });
   </script>
 </body>
